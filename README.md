@@ -1,10 +1,10 @@
-# Intelligent Support Ticket Automation
+# Support Ticket Automation
 
 An end-to-end support-ticket platform built on **UiPath**: a customer portal and agent
 console, a stateless API that fronts UiPath, and an automation layer of RPA workflows, a
 Maestro BPMN orchestration and Data Fabric as the system of record.
 
-**There is no application database.** Tickets live in UiPath Data Fabric, and new tickets are
+The tickets live in UiPath Data Fabric, and new tickets are
 written only by a robot. Every layer below is arranged around that one constraint.
 
 Next.js 16 · React 19 · TypeScript · Express · UiPath Orchestrator · Maestro · Data Fabric
