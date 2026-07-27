@@ -15,7 +15,7 @@ Next.js 16 · React 19 · TypeScript · Express · UiPath Orchestrator · Maestr
 
 | Path | What it is | In scope |
 |---|---|---|
-| **`Ticketing App/`** | Next.js 16 customer portal + agent console, and the `/api/v1` integration API | ✅ submission |
+| **`Ticketing App/`** | Next.js 16 (rather than coded app) customer portal + agent console, and the `/api/v1` integration API | ✅ submission |
 | **`SupportDeskApi/`** | Express/TypeScript back-office API — JWT auth, SLA engine, refunds, intake-exception replay | ✅ submission |
 | `src/`, `prisma/`, `public/`, `dev.db` | **Purity storefront** — a separate e-commerce project that shares this repository. Not part of this submission. | ❌ unrelated |
 
