@@ -15,12 +15,8 @@ Next.js 16 · React 19 · TypeScript · Express · UiPath Orchestrator · Maestr
 
 | Path | What it is | In scope |
 |---|---|---|
-| **`Ticketing App/`** | Next.js 16 (rather than coded app) customer portal + agent console, and the `/api/v1` integration API | ✅ submission |
-| **`SupportDeskApi/`** | Express/TypeScript back-office API — JWT auth, SLA engine, refunds, intake-exception replay | ✅ submission |
-
-> If you are evaluating this project, everything that matters is in **`Ticketing App/`** and
-> **`SupportDeskApi/`**. The storefront at the repository root is unrelated work that happens
-> to live in the same repo.
+| **`Ticketing App/`** | Next.js 16 (rather than coded app) customer portal + agent console, and the `/api/v1` integration API |
+| **`SupportDeskApi/`** | Express/TypeScript back-office API — JWT auth, SLA engine, refunds, intake-exception replay |
 
 ---
 
