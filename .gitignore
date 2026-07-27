@@ -41,3 +41,7 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# Packaged submission artifacts. Built from this repo (git archive + uip exports),
+# so committing them would duplicate the repository inside itself.
+/SubmissionFolder
