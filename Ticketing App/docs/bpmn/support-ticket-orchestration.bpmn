@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Purity" targetNamespace="http://purity.support/bpmn">
+  <bpmn:process id="Process_SupportTicket" name="Purity Support Ticket Orchestration" isExecutable="false">
+    <bpmn:startEvent id="Start" name="Ticket submitted">
+      <bpmn:outgoing>f1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="CreateTicket" name="[App] Create ticket and enqueue Q_Intake">
+      <bpmn:incoming>f1</bpmn:incoming>
+      <bpmn:outgoing>f2</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:callActivity id="RPA_Intake" name="[RPA] Intake Orchestration: classify + store in Data Fabric (Unassigned)" calledElement="Purity_IntakeOrchestrator">
+      <bpmn:incoming>f2</bpmn:incoming>
+      <bpmn:outgoing>f3</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="GwConf" name="AI confidence high?">
+      <bpmn:incoming>f3</bpmn:incoming>
+      <bpmn:outgoing>f4yes</bpmn:outgoing>
+      <bpmn:outgoing>f4no</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="ManualReview" name="[Human] Manual review and classify">
+      <bpmn:incoming>f4no</bpmn:incoming>
+      <bpmn:outgoing>f5</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GwConfJoin">
+      <bpmn:incoming>f4yes</bpmn:incoming>
+      <bpmn:incoming>f5</bpmn:incoming>
+      <bpmn:outgoing>f6</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="RPA_Routing" name="[RPA] Smart routing - select best agent">
+      <bpmn:incoming>f6</bpmn:incoming>
+      <bpmn:outgoing>f7</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:exclusiveGateway id="GwAgent" name="Agent available?">
+      <bpmn:incoming>f7</bpmn:incoming>
+      <bpmn:outgoing>f8yes</bpmn:outgoing>
+      <bpmn:outgoing>f8no</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="EscalateAssign" name="[Manager] Escalate and assign">
+      <bpmn:incoming>f8no</bpmn:incoming>
+      <bpmn:outgoing>f9</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GwAgentJoin">
+      <bpmn:incoming>f8yes</bpmn:incoming>
+      <bpmn:incoming>f9</bpmn:incoming>
+      <bpmn:outgoing>f10</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="AssignNotify" name="[App] Assign and notify (PATCH /api/v1)">
+      <bpmn:incoming>f10</bpmn:incoming>
+      <bpmn:outgoing>f11</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:userTask id="Resolve" name="[Agent] Work and resolve ticket">
+      <bpmn:incoming>f11</bpmn:incoming>
+      <bpmn:outgoing>f12</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GwSla" name="SLA breached?">
+      <bpmn:incoming>f12</bpmn:incoming>
+      <bpmn:outgoing>f13no</bpmn:outgoing>
+      <bpmn:outgoing>f13yes</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="SlaEscalation" name="[Manager] SLA escalation">
+      <bpmn:incoming>f13yes</bpmn:incoming>
+      <bpmn:outgoing>f14</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="GwSlaJoin">
+      <bpmn:incoming>f13no</bpmn:incoming>
+      <bpmn:incoming>f14</bpmn:incoming>
+      <bpmn:outgoing>f15</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:serviceTask id="NotifyCustomer" name="[App] Notify customer and capture CSAT">
+      <bpmn:incoming>f15</bpmn:incoming>
+      <bpmn:outgoing>f16</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="RPA_Knowledge" name="[RPA] Knowledge learning (KB/FAQ candidate)">
+      <bpmn:incoming>f16</bpmn:incoming>
+      <bpmn:outgoing>f17</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="End" name="Ticket closed">
+      <bpmn:incoming>f17</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="f1" sourceRef="Start" targetRef="CreateTicket" />
+    <bpmn:sequenceFlow id="f2" sourceRef="CreateTicket" targetRef="RPA_Intake" />
+    <bpmn:sequenceFlow id="f3" sourceRef="RPA_Intake" targetRef="GwConf" />
+    <bpmn:sequenceFlow id="f4yes" name="Yes" sourceRef="GwConf" targetRef="GwConfJoin" />
+    <bpmn:sequenceFlow id="f4no" name="Low - review" sourceRef="GwConf" targetRef="ManualReview" />
+    <bpmn:sequenceFlow id="f5" sourceRef="ManualReview" targetRef="GwConfJoin" />
+    <bpmn:sequenceFlow id="f6" sourceRef="GwConfJoin" targetRef="RPA_Routing" />
+    <bpmn:sequenceFlow id="f7" sourceRef="RPA_Routing" targetRef="GwAgent" />
+    <bpmn:sequenceFlow id="f8yes" name="Yes" sourceRef="GwAgent" targetRef="GwAgentJoin" />
+    <bpmn:sequenceFlow id="f8no" name="No" sourceRef="GwAgent" targetRef="EscalateAssign" />
+    <bpmn:sequenceFlow id="f9" sourceRef="EscalateAssign" targetRef="GwAgentJoin" />
+    <bpmn:sequenceFlow id="f10" sourceRef="GwAgentJoin" targetRef="AssignNotify" />
+    <bpmn:sequenceFlow id="f11" sourceRef="AssignNotify" targetRef="Resolve" />
+    <bpmn:sequenceFlow id="f12" sourceRef="Resolve" targetRef="GwSla" />
+    <bpmn:sequenceFlow id="f13no" name="No" sourceRef="GwSla" targetRef="GwSlaJoin" />
+    <bpmn:sequenceFlow id="f13yes" name="Yes" sourceRef="GwSla" targetRef="SlaEscalation" />
+    <bpmn:sequenceFlow id="f14" sourceRef="SlaEscalation" targetRef="GwSlaJoin" />
+    <bpmn:sequenceFlow id="f15" sourceRef="GwSlaJoin" targetRef="NotifyCustomer" />
+    <bpmn:sequenceFlow id="f16" sourceRef="NotifyCustomer" targetRef="RPA_Knowledge" />
+    <bpmn:sequenceFlow id="f17" sourceRef="RPA_Knowledge" targetRef="End" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_Process_SupportTicket">
+    <bpmndi:BPMNPlane id="BPMNPlane_Process_SupportTicket" bpmnElement="Process_SupportTicket">
+      <bpmndi:BPMNShape id="Start_di" bpmnElement="Start">
+        <dc:Bounds x="57" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CreateTicket_di" bpmnElement="CreateTicket">
+        <dc:Bounds x="175" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RPA_Intake_di" bpmnElement="RPA_Intake">
+        <dc:Bounds x="325" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwConf_di" bpmnElement="GwConf" isMarkerVisible="true">
+        <dc:Bounds x="500" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwConfJoin_di" bpmnElement="GwConfJoin" isMarkerVisible="true">
+        <dc:Bounds x="800" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RPA_Routing_di" bpmnElement="RPA_Routing">
+        <dc:Bounds x="925" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwAgent_di" bpmnElement="GwAgent" isMarkerVisible="true">
+        <dc:Bounds x="1100" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwAgentJoin_di" bpmnElement="GwAgentJoin" isMarkerVisible="true">
+        <dc:Bounds x="1400" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AssignNotify_di" bpmnElement="AssignNotify">
+        <dc:Bounds x="1525" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Resolve_di" bpmnElement="Resolve">
+        <dc:Bounds x="1675" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwSla_di" bpmnElement="GwSla" isMarkerVisible="true">
+        <dc:Bounds x="1850" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GwSlaJoin_di" bpmnElement="GwSlaJoin" isMarkerVisible="true">
+        <dc:Bounds x="2150" y="45" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NotifyCustomer_di" bpmnElement="NotifyCustomer">
+        <dc:Bounds x="2275" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RPA_Knowledge_di" bpmnElement="RPA_Knowledge">
+        <dc:Bounds x="2425" y="30" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="End_di" bpmnElement="End">
+        <dc:Bounds x="2607" y="52" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ManualReview_di" bpmnElement="ManualReview">
+        <dc:Bounds x="625" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EscalateAssign_di" bpmnElement="EscalateAssign">
+        <dc:Bounds x="1225" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SlaEscalation_di" bpmnElement="SlaEscalation">
+        <dc:Bounds x="1975" y="170" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="f1_di" bpmnElement="f1">
+        <di:waypoint x="93" y="70" />
+        <di:waypoint x="175" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f2_di" bpmnElement="f2">
+        <di:waypoint x="275" y="70" />
+        <di:waypoint x="325" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f3_di" bpmnElement="f3">
+        <di:waypoint x="425" y="70" />
+        <di:waypoint x="500" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4yes_di" bpmnElement="f4yes">
+        <di:waypoint x="550" y="70" />
+        <di:waypoint x="800" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f4no_di" bpmnElement="f4no">
+        <di:waypoint x="525" y="95" />
+        <di:waypoint x="525" y="210" />
+        <di:waypoint x="625" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f6_di" bpmnElement="f6">
+        <di:waypoint x="850" y="70" />
+        <di:waypoint x="925" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f7_di" bpmnElement="f7">
+        <di:waypoint x="1025" y="70" />
+        <di:waypoint x="1100" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8yes_di" bpmnElement="f8yes">
+        <di:waypoint x="1150" y="70" />
+        <di:waypoint x="1400" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f8no_di" bpmnElement="f8no">
+        <di:waypoint x="1125" y="95" />
+        <di:waypoint x="1125" y="210" />
+        <di:waypoint x="1225" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f10_di" bpmnElement="f10">
+        <di:waypoint x="1450" y="70" />
+        <di:waypoint x="1525" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f11_di" bpmnElement="f11">
+        <di:waypoint x="1625" y="70" />
+        <di:waypoint x="1675" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f12_di" bpmnElement="f12">
+        <di:waypoint x="1775" y="70" />
+        <di:waypoint x="1850" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13no_di" bpmnElement="f13no">
+        <di:waypoint x="1900" y="70" />
+        <di:waypoint x="2150" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f13yes_di" bpmnElement="f13yes">
+        <di:waypoint x="1875" y="95" />
+        <di:waypoint x="1875" y="210" />
+        <di:waypoint x="1975" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f15_di" bpmnElement="f15">
+        <di:waypoint x="2200" y="70" />
+        <di:waypoint x="2275" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f16_di" bpmnElement="f16">
+        <di:waypoint x="2375" y="70" />
+        <di:waypoint x="2425" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f17_di" bpmnElement="f17">
+        <di:waypoint x="2525" y="70" />
+        <di:waypoint x="2607" y="70" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f5_di" bpmnElement="f5">
+        <di:waypoint x="725" y="210" />
+        <di:waypoint x="825" y="210" />
+        <di:waypoint x="825" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f9_di" bpmnElement="f9">
+        <di:waypoint x="1325" y="210" />
+        <di:waypoint x="1425" y="210" />
+        <di:waypoint x="1425" y="95" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="f14_di" bpmnElement="f14">
+        <di:waypoint x="2075" y="210" />
+        <di:waypoint x="2175" y="210" />
+        <di:waypoint x="2175" y="95" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

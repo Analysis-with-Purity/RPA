@@ -1,0 +1,34 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(npm install prisma @prisma/client next-auth@beta @auth/prisma-adapter bcryptjs zod react-hook-form @hookform/resolvers zustand nanoid lucide-react resend framer-motion clsx 2>&1)",
+      "Bash(npx prisma *)",
+      "Bash(DATABASE_URL=\"file:./prisma/dev.db\" node scratch-test-prisma.mjs)",
+      "Bash(npm install *)",
+      "Bash(npm config *)",
+      "Bash(node scratch-test-prisma.mjs)",
+      "Bash(node -e \"console.log\\(Object.keys\\(require\\('@prisma/adapter-better-sqlite3'\\)\\)\\)\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/next-auth/package.json'\\).version\\)\")",
+      "Bash(grep -i \"^dotenv$\")",
+      "Bash(npx --no-install tsc --noEmit --strict false --target ES2020 --module commonjs --moduleResolution node --esModuleInterop prisma/seed.ts)",
+      "Bash(npx --no-install tsc --noEmit --target ES2020 --module commonjs --moduleResolution node --esModuleInterop prisma/seed.ts)",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/tsx/package.json'\\).version\\)\")",
+      "Bash(npx tsx *)",
+      "Bash(npm run *)",
+      "Bash(tee /tmp/dev.log)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Read(//tmp/**)",
+      "Bash(node -e ' *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/login)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/register)",
+      "Bash(curl -s http://localhost:3000/ -o /dev/null -w \"homepage: %{http_code}\\\\n\")",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(npx playwright *)",
+      "Bash(node \"C:/Users/HomePC/AppData/Local/Temp/claude/c--Users-HomePC-Documents-Purity/0c22125c-2a56-485a-906f-ef171a5c1dcb/scratchpad/verify.mjs\")"
+    ]
+  }
+}

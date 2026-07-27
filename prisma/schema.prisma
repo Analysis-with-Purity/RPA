@@ -1,0 +1,319 @@
+// Purity — Luxury Perfume E-commerce
+// Prisma schema (SQLite for local development)
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ---------- Enums ----------
+
+enum Gender {
+  MEN
+  WOMEN
+  UNISEX
+}
+
+enum OrderStatus {
+  PROCESSING
+  PACKED
+  SHIPPED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  PAYSTACK
+  FLUTTERWAVE
+  CARD
+  BANK_TRANSFER
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+// ---------- Auth / Users ----------
+
+model User {
+  id                String    @id @default(cuid())
+  name              String
+  email             String    @unique
+  passwordHash      String
+  phone             String?
+  image             String?
+  emailVerified     DateTime?
+  rememberMe        Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  addresses         Address[]
+  orders            Order[]
+  wishlist          WishlistItem[]
+  reviews           Review[]
+  verificationTokens EmailVerificationToken[]
+  resetTokens       PasswordResetToken[]
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String   @default("Home")
+  fullName  String
+  phone     String
+  line1     String
+  city      String
+  state     String
+  country   String   @default("Nigeria")
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  orders    Order[]
+}
+
+// ---------- Catalog ----------
+
+model Brand {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  slug     String    @unique
+  products Product[]
+}
+
+model Vibe {
+  id          String        @id @default(cuid())
+  name        String
+  slug        String        @unique
+  emoji       String
+  description String
+  sortOrder   Int           @default(0)
+  products    ProductVibe[]
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  brandId          String
+  brand            Brand    @relation(fields: [brandId], references: [id])
+  gender           Gender
+  fragranceFamily  String
+  shortDescription String
+  description      String
+  topNotes         String   // comma-separated
+  middleNotes      String   // comma-separated
+  baseNotes        String   // comma-separated
+  longevity        String   // e.g. "8-10 hours"
+  projection       String   // e.g. "Moderate to Strong"
+  bestSeason       String   // comma-separated
+  bestOccasion     String   // comma-separated
+  perfectFor       String
+  images           String   // JSON array of image urls
+  isBestSeller     Boolean  @default(false)
+  isNewArrival     Boolean  @default(false)
+  isSignature      Boolean  @default(false)
+  isLimitedEdition Boolean  @default(false)
+  isGiftSet        Boolean  @default(false)
+  createdAt        DateTime @default(now())
+
+  sizes      ProductSize[]
+  vibes      ProductVibe[]
+  reviews    Review[]
+  wishlisted WishlistItem[]
+  orderItems OrderItem[]
+  bundleItems BundleItem[]
+
+  @@index([gender])
+  @@index([fragranceFamily])
+}
+
+model ProductSize {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  size      Int     // ml
+  price     Float
+  stock     Int     @default(0)
+  sku       String  @unique
+
+  orderItems  OrderItem[]
+  bundleItems BundleItem[]
+}
+
+model ProductVibe {
+  productId String
+  vibeId    String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vibe      Vibe    @relation(fields: [vibeId], references: [id], onDelete: Cascade)
+
+  @@id([productId, vibeId])
+}
+
+// ---------- Bundles ----------
+
+model Bundle {
+  id            String       @id @default(cuid())
+  name          String
+  slug          String       @unique
+  tagline       String
+  description   String
+  image         String
+  discountType  DiscountType @default(PERCENT)
+  discountValue Float
+  active        Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+
+  items BundleItem[]
+}
+
+model BundleItem {
+  id        String       @id @default(cuid())
+  bundleId  String
+  bundle    Bundle       @relation(fields: [bundleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product      @relation(fields: [productId], references: [id])
+  sizeId    String?
+  size      ProductSize? @relation(fields: [sizeId], references: [id])
+  quantity  Int          @default(1)
+}
+
+// ---------- Reviews / Wishlist ----------
+
+model Review {
+  id                String   @id @default(cuid())
+  productId         String
+  product           Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating            Int
+  title             String
+  comment           String
+  images            String? // JSON array
+  verifiedPurchase  Boolean  @default(false)
+  createdAt         DateTime @default(now())
+
+  @@index([productId])
+}
+
+model WishlistItem {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+}
+
+// ---------- Orders ----------
+
+model PromoCode {
+  id            String       @id @default(cuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  active        Boolean      @default(true)
+  expiresAt     DateTime?
+  orders        Order[]
+}
+
+model Order {
+  id             String        @id @default(cuid())
+  orderNumber    String        @unique
+  userId         String?
+  user           User?         @relation(fields: [userId], references: [id])
+  guestEmail     String?
+  fullName       String
+  phone          String
+  email          String
+  addressId      String?
+  address        Address?      @relation(fields: [addressId], references: [id])
+  addressLine    String
+  city           String
+  state          String
+  deliveryOption String        @default("Standard")
+  paymentMethod  PaymentMethod
+  paymentStatus  PaymentStatus @default(PENDING)
+  paymentRef     String?
+  status         OrderStatus   @default(PROCESSING)
+  promoCodeId    String?
+  promoCode      PromoCode?    @relation(fields: [promoCodeId], references: [id])
+  subtotal       Float
+  discount       Float         @default(0)
+  shippingFee    Float         @default(0)
+  total          Float
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  items OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id            String       @id @default(cuid())
+  orderId       String
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String?
+  product       Product?     @relation(fields: [productId], references: [id])
+  sizeId        String?
+  size          ProductSize? @relation(fields: [sizeId], references: [id])
+  name          String
+  brand         String
+  sizeLabel     String
+  image         String
+  price         Float
+  quantity      Int
+}
+
+// ---------- Misc ----------
+
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
